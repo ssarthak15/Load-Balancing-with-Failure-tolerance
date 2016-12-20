@@ -1,0 +1,184 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="description" content="">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>COSC 6377 : Computer Networks: Sharding and Replication for Online Storage</title>
+<link rel="alternate" type="application/rss+xml" title="frittt.com" href="feed/index.html">
+<link href="http://fonts.googleapis.com/css?family=Raleway:700,300" rel="stylesheet"
+        type="text/css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/prettify.css">
+</head>
+<body>
+<div class="wrapper">
+<nav>
+ 
+  	<div class="pull-left">
+    	<h1><a href="javascript:"><img src="img/icon.png" alt="Free Documentation Template Icon" /> <span>DocWeb</span></a></h1>
+    </div>
+    
+    <div class="pull-right">
+    	<a href="http://frittt.com/free-documentation-html-template-docweb" target="_blank" class="btn btn-download"><img src="img/download.png" width="25" alt="Download Free Documentation Template" /> Download Now</a>
+    </div>
+
+</nav>
+<header>
+  <div class="container">
+    <h2 class="lone-header">COSC 6377 : Computer Networks: Sharding and Replication for Online Storage</h2>
+  </div>
+</header>
+<section>
+  <div class="container">
+    <ul class="docs-nav">
+	  <li><strong>What is this?</strong></li>
+      <li><a href="#welcome" class="cc-active">Introduction</a></li>
+      <li><a href="#benefits" class="cc-active">Client</a></li>
+      <li><a href="#features" class="cc-active">Shard</a></li>
+      <li><a href="#license" class="cc-active">Shard Metadata</a></li>
+      <li class="separator"></li>
+      <li><strong>THE SHARD</strong></li>
+      <li><a href="#view_type" class="cc-active">Shard Details</a></li>
+      <li><a href="#animation_style" class="cc-active">The Load Balancing algorithm</a></li>
+      <li><a href="#bars_text" class="cc-active">Example</a></li>
+	  <li><a href="#added_funnctionality" class="cc-active">Added Function</a></li>
+    </ul>
+    <div class="docs-content">
+      <h2> What is this?</h2>
+      <h3 id="welcome"> Introduction</h3>
+      
+      <p> This program is a loadbalancing server. Thhis system that provides storage system 
+	  that uses sharding and replication to improve robustness of the storage service. The 
+	  system shares key ideas in its design with some of the online storage/file sharing 
+	  systems.</p>
+	  
+	  <p>In this storage system, the client may partition the data it needs to upload into 
+		a number of partitions (e.g., 3 in this project) and upload it to three different 
+		serverswhich we call these shards. </p>
+		
+		<p>In this project, we will have each shard split the data it receives for storage into
+		two pieces and copy them to the remaining two servers. That way, if a shard crashes,
+		we have a copy of the data on the two remaining servers. The system will not be able 
+		to recover if more than one shard crashes.</p>
+		
+		<p>The clients and the shards require several configuration parameters which are specified
+		in a configuration file. The configuration file uses a JSON format and allows these keys:</p>
+	  
+      <pre class="prettyprint">      homedir: home directory for the shard and client. Each client
+      and shard has a different home directory.
+
+      listenport: port at which this shard should listen for
+      incoming connections.
+
+      metadatafile: the file that stores the metadata corresponding to
+      the files and replicates stored by the shard.
+
+      shard1ip: IP address of shard 1. Client and shard use this
+      information.
+
+      shard1port: Port of shard 1. Client and shard use this
+      information.
+
+      shard2ip: IP address of shard 2. Client and shard use this
+      information.
+
+      shard2port: Port of shard 2. Client and shard use this
+      information.
+
+      shard3ip: IP address of shard 3. Client uses this information.
+
+      shard3port: Port of shard 3. Client uses this information.</pre>
+
+      <h3 id="benefits"> Client</h3>
+      <p>The client is a socket program that interacts with the shards to determine how much 
+		data to upload to each shard. Then it uploads the appropriate amount of data to the 
+		shards. The client tries to balance the total amount of storage utilized on the shards. 
+		For example, if shard1 happens to store more data than shard2 and shard3, the client 
+		will upload more data to shard1 than shard2 and shard3. Ideally, shards 1, 2, and 3 will 
+		have exactly the same amount of data after each upload but that will never be the case 
+		because of how the shards are replicated but we will try to get as close to balanced 
+		storage as possible.</p>
+      
+      <h3 id="features"> Shard</h3>
+      <p>Shard is responsible for storing the files. For simplification, shards will also be the 
+		backups and develop the system so that it can tolerate the failure of one shard. Further, 
+		the system will support exactly three shards but the IP address and ports are not hard 
+		coded in the code. Each shard connects to the other two shards, shard1 and shard2.</p>
+		
+		<p>The shards, when they receive an upload file, they split the file into two equal parts 
+		and upload the "backup" to the other two shards. Thus each upload chunk is tagged as 
+		primary or backup on the shard. When calculating the total storage used on a shard, it 
+		reports the total of primary and backup storage.</p>
+
+		<p>The shard listens to the incoming connections from the clients. It also connects to the 
+		other shards in the network. It keeps a metadata of all the uploaded files and replicated 
+		files as backup.</p>
+		
+      <h3 id="license"> Shard metadata</h3>
+      <p>The home directory for the shard contains a metadata file specified in the configuration 
+		file. The metadata has information about the primary and backup data stored by the shard. 
+		This file must be in JSON format but you are welcome to come up with your own list of 
+		fields as needed by your shards to operate correctly and efficiencly..</p>
+      <hr>
+
+      <h3 id="view_type"> Shard Details</h3>
+      <p>The shard uses a load balancing algorithm which is explained below. The algorithm is used only when a client 
+	  uplooads a file to the server. </p>
+     
+
+
+      <h3 id="animation_style"> The Load Balancing Algorithm</h3>
+      <p>This is a custom algorithm thatwas designed specifically for this project. In this 
+		algorithm it has been assumed that shards might different number of bytes initially. 
+		Irrespective of how huge the difference is the Algorithm will still give 2 Bytes of 
+		the file to every shard. </p>
+		<p>After every shard has been alloted 2 bytes of data,  the shard which has the least 
+		load will get the 1 byte.</p>
+		<p>This process will repeat itself until all shards are balanced.</p>
+
+      <h3 id="bars_text"> Example</h3>
+      <pre>
+Assume:
+Shard1: 100 Bytes 			Shard2: 500 Bytes  			Shard3: 500 Bytes
+and we have to upload a file of 100 Bytes
+
+In this case first all shards will get 2 Bytes of data.
+Shard1: 102 Bytes 			Shard2: 502 Bytes  			Shard3: 502 Bytes
+
+Now, smallest shard will get next byte:
+Shard1: 103 Bytes 			Shard2: 502 Bytes  			Shard3: 502 Bytes
+
+This will be repeated until balance is achieved or upload is complete. For this example:
+Shard1: 196 Bytes 			Shard2: 502 Bytes  			Shard3: 502 Bytes
+   </pre>
+   
+   <h3 id="added_funnctionality"> Added function</h3>
+   
+   <pre>
+A new function has been added. If the client want he can delete all the files on the server, i.e. on all shards.
+A client can use this function simply by using the following command:</pre>
+<pre class="prettyprint"><big>python client.py -config configfile.json -eraseall
+</pre>
+   
+    </div>
+  </div>
+</section>
+<section class="vibrant centered">
+  <div class="">
+  </div>
+</section>
+<footer>
+  <div class="">
+    <p> &copy; Copyright Frittt Templates. All Rights Reserved.</p>
+  </div>
+</footer>
+</div>
+<script src="js/jquery.min.js"></script> 
+<script type="text/javascript" src="js/prettify/prettify.js"></script> 
+<script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js?lang=css&skin=sunburst"></script>
+<script src="js/layout.js"></script>
+</body>
+</html>

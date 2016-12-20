@@ -1,0 +1,9 @@
+{
+    "homedir": "sha1_dir",
+    "listenport": "11007",
+    "metadatafile": "meta1.txt",
+    "shard1ip": "localhost",
+    "shard1port": "11008",
+    "shard2ip": "localhost",
+    "shard2port": "11009"
+}
